@@ -17,12 +17,6 @@ function useDebouncedValue(value, delayMs) {
   return debounced
 }
 
-function parseMode(text) {
-  const trimmed = text ?? ''
-  if (trimmed.startsWith('/')) return 'command'
-  return 'natural'
-}
-
 async function resolveBackendBaseUrl() {
   const maybePort = await window.electron?.getBackendPort?.()
   const port = typeof maybePort === 'number' ? maybePort : 5000
@@ -56,11 +50,8 @@ function CumoInput() {
   const [submitError, setSubmitError] = useState(null)
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  const mode = parseMode(text)
   const debouncedText = useDebouncedValue(text, 250)
-  const showRawJson = import.meta.env.DEV
   const needsCalendar =
-    mode === 'natural' &&
     !selectedCalendarId &&
     !calendarLoading &&
     calendarOptions.length > 0
@@ -83,11 +74,10 @@ function CumoInput() {
   useEffect(() => {
     if (!window.electron?.resizeWindow) return
 
-    const needsExtraSpace =
-      mode === 'natural' && (preview || error || needsCalendar || submitError || submitLoading)
+    const needsExtraSpace = error || needsCalendar || submitError || submitLoading
     const height = needsExtraSpace ? 380 : 130
     window.electron.resizeWindow({ width: 700, height })
-  }, [mode, preview, error, needsCalendar, submitError, submitLoading])
+  }, [error, needsCalendar, submitError, submitLoading])
 
   useEffect(() => {
     if (!backendBaseUrl) return
@@ -185,7 +175,6 @@ function CumoInput() {
 
   const handleSubmit = async () => {
     if (!backendBaseUrl) return
-    if (mode !== 'natural') return
     if (!selectedCalendarId) {
       setSubmitError('Select a calendar before scheduling.')
       return
@@ -218,14 +207,6 @@ function CumoInput() {
 
   useEffect(() => {
     if (!backendBaseUrl) return
-
-    const currentMode = parseMode(debouncedText)
-    if (currentMode !== 'natural') {
-      setPreview(null)
-      setError(null)
-      setIsLoading(false)
-      return
-    }
 
     const query = (debouncedText ?? '').trim()
     if (!query) {
@@ -271,10 +252,7 @@ function CumoInput() {
     <div className="h-full w-full overflow-hidden p-1.5">
       <div className="h-full w-full overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900/70 px-3 pt-2 pb-3 shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
         <div className="flex items-center justify-between gap-2">
-          <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] text-white/60">
-            {mode === 'command' ? 'Command' : 'Natural'}
-          </div>
-          {mode === 'natural' && calendarOptions.length > 0 ? (
+          {calendarOptions.length > 0 ? (
             <select
               className="w-auto max-w-[400px] rounded border border-white/10 bg-zinc-900/70 px-1 py-0 text-[14px] leading-none text-white/80 outline-none transition focus:border-white/30 focus:ring-1 focus:ring-white/20"
               value={selectedCalendarId ?? ''}
@@ -293,13 +271,10 @@ function CumoInput() {
           ) : null}
         </div>
 
-        {mode === 'command' ? (
-          <div className="mt-2 text-[12px] text-white/50">Command mode coming next.</div>
-        ) : (
-          <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2">
             {calendarLoading ? (
               <div className="text-[12px] text-white/50">
-                Loading calendars…
+                loading calendars…
                 {calendarRetries > 0 ? ` (retry ${calendarRetries})` : ''}
               </div>
             ) : null}
@@ -315,7 +290,7 @@ function CumoInput() {
               <input
                 autoFocus
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/40"
-                placeholder="Type an event… (or start with / for commands)"
+                placeholder="type an event…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
@@ -327,7 +302,7 @@ function CumoInput() {
               />
             </div>
 
-            {isLoading ? <div className="text-[12px] text-white/50">Parsing…</div> : null}
+            {isLoading ? <div className="text-[12px] text-white/50">parsing…</div> : null}
 
             {error ? (
               <div className="rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[12px] text-red-200">
@@ -335,7 +310,7 @@ function CumoInput() {
               </div>
             ) : null}
 
-            {submitLoading ? <div className="text-[12px] text-white/50">Scheduling…</div> : null}
+            {submitLoading ? <div className="text-[12px] text-white/50">scheduling…</div> : null}
 
             {submitError ? (
               <div className="rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[12px] text-red-200">
@@ -343,19 +318,8 @@ function CumoInput() {
               </div>
             ) : null}
 
-            {preview ? (
-              showRawJson ? (
-                <pre className="max-h-32 overflow-hidden rounded-md border border-white/10 bg-zinc-900/80 px-2.5 py-2 text-[12px] text-white/80">
-                  {JSON.stringify(preview, null, 2)}
-                </pre>
-              ) : (
-                <div className="rounded-md border border-white/10 bg-zinc-900/80 px-2.5 py-2 text-[12px] text-white/70">
-                  Parsed.
-                </div>
-              )
-            ) : null}
+            {preview ? <div className="text-[12px] text-white/50">ready to push.</div> : null}
           </div>
-        )}
       </div>
     </div>
   )
