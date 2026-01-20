@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 function App() {
   return <CumoInput />
@@ -49,12 +49,20 @@ function CumoInput() {
   const [calendarRetries, setCalendarRetries] = useState(0)
   const [submitError, setSubmitError] = useState(null)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const inputRef = useRef(null)
 
   const debouncedText = useDebouncedValue(text, 250)
   const needsCalendar =
     !selectedCalendarId &&
     !calendarLoading &&
     calendarOptions.length > 0
+
+  useEffect(() => {
+    // Focus the input when component mounts
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -251,12 +259,17 @@ function CumoInput() {
   return (
     <div className="h-full w-full overflow-hidden p-1.5">
       <div className="h-full w-full overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900/70 px-3 pt-2 pb-3 shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <img src="/cumo.svg" alt="Cumo" className="w-5 h-5 rounded" />
+            <span className="text-[15px] text-white/80 font-medium">Cumo</span>
+          </div>
           {calendarOptions.length > 0 ? (
             <select
               className="w-auto max-w-[400px] rounded border border-white/10 bg-zinc-900/70 px-1 py-0 text-[14px] leading-none text-white/80 outline-none transition focus:border-white/30 focus:ring-1 focus:ring-white/20"
               value={selectedCalendarId ?? ''}
               onChange={handleCalendarChange}
+              tabIndex={-1}
             >
               <option value="" disabled>
                 Select a calendar…
@@ -271,7 +284,7 @@ function CumoInput() {
           ) : null}
         </div>
 
-        <div className="mt-3 space-y-2">
+        <div className="space-y-2">
             {calendarLoading ? (
               <div className="text-[12px] text-white/50">
                 loading calendars…
@@ -288,6 +301,7 @@ function CumoInput() {
             <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/90 shadow-inner transition focus-within:border-white/30 focus-within:bg-white/10">
               <div className="select-none text-xs font-semibold text-white/40">{'>'}</div>
               <input
+                ref={inputRef}
                 autoFocus
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/40"
                 placeholder="type an event…"
