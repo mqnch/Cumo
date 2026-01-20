@@ -15,9 +15,10 @@ vi.mock('electron', () => ({
   },
 }))
 
-import '../preload'
+it('exposes the electron API and wires IPC calls', async () => {
+  vi.resetModules()
+  await import('../preload')
 
-it('exposes the electron API and wires IPC calls', () => {
   expect(mocks.exposeInMainWorld).toHaveBeenCalledOnce()
 
   const [, api] = mocks.exposeInMainWorld.mock.calls[0]
