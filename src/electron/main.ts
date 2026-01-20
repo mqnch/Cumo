@@ -53,7 +53,7 @@ function createMainWindow() {
 }
 
 app.whenReady().then(() => {
-  startBackend()
+  void startBackend()
   createMainWindow()
 
   app.on('activate', () => {
