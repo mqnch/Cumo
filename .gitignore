@@ -33,4 +33,40 @@ __pycache__/
 backend/token.json
 backend/credentials.json
 backend/settings.json
+backend/dist/
+backend/build/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build outputs
+build/
+*.dmg
+*.dmg.blockmap
+*.app
+*.exe
+*.deb
+*.rpm
+*.AppImage
+*.snap
+*.msi
+*.pkg
+*.tar.gz
+*.zip
+*.blockmap
+latest-*.yml
+
+# Electron build artifacts
+out/
+release/
+packages/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+builderrorlogs.md
 

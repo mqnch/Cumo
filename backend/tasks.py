@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -13,7 +14,9 @@ from auth import get_calendar_service
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path(__file__).resolve().parent / "cumo.db"
+DATA_DIR = Path(os.environ.get("CUMO_DATA_DIR", Path(__file__).resolve().parent))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "cumo.db"
 huey = SqliteHuey("cumo", filename=str(DB_PATH))
 
 

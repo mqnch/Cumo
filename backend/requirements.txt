@@ -9,3 +9,4 @@ parsedatetime
 spacy
 pytest
 python-dateutil
+pyinstaller

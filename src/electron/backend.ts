@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
+import { app } from 'electron'
 
 let backendProcess: ChildProcess | null = null
 let backendPort: number | null = null
@@ -22,6 +23,11 @@ function resolvePythonExecutable(backendDir: string) {
   }
 
   return process.platform === 'win32' ? 'python' : 'python3'
+}
+
+function resolveBackendBinary(backendDir: string) {
+  const binaryName = process.platform === 'win32' ? 'cumo-backend.exe' : 'cumo-backend'
+  return path.join(backendDir, binaryName)
 }
 
 function isPortFree(port: number) {
@@ -61,10 +67,13 @@ async function resolveBackendPort() {
   return 5001
 }
 
-function buildBackendEnv(port: number) {
+function buildBackendEnv(port: number, dataDir: string, credentialsPath: string) {
   return {
     ...process.env,
     CUMO_BACKEND_PORT: String(port),
+    CUMO_DATA_DIR: dataDir,
+    CUMO_GOOGLE_CREDENTIALS: credentialsPath,
+    CUMO_GOOGLE_TOKEN: path.join(dataDir, 'token.json'),
   }
 }
 
@@ -77,21 +86,41 @@ export async function startBackend() {
     return backendProcess
   }
 
-  const backendDir = path.join(process.cwd(), 'backend')
+  const backendDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'backend')
+    : path.join(process.cwd(), 'backend')
   if (!fs.existsSync(backendDir)) {
     console.warn('[backend] Missing backend directory, skipping Python spawn.')
     return null
   }
 
-  const python = resolvePythonExecutable(backendDir)
   const port = await resolveBackendPort()
   backendPort = port
+  const dataDir = app.getPath('userData')
+  const credentialsPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'backend', 'credentials.json')
+    : path.join(backendDir, 'credentials.json')
 
-  const child = spawn(python, ['-u', 'app.py'], {
-    cwd: backendDir,
-    env: buildBackendEnv(port),
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
+  let child: ChildProcess
+  if (app.isPackaged) {
+    const backendBinary = resolveBackendBinary(backendDir)
+    if (!fs.existsSync(backendBinary)) {
+      console.warn('[backend] Missing packaged backend binary, skipping spawn.')
+      return null
+    }
+    child = spawn(backendBinary, [], {
+      cwd: backendDir,
+      env: buildBackendEnv(port, dataDir, credentialsPath),
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  } else {
+    const python = resolvePythonExecutable(backendDir)
+    child = spawn(python, ['-u', 'app.py'], {
+      cwd: backendDir,
+      env: buildBackendEnv(port, dataDir, credentialsPath),
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  }
 
   child.stdout?.on('data', (chunk) => {
     console.log(`[backend] ${chunk.toString().trimEnd()}`)

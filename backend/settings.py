@@ -1,9 +1,12 @@
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 BASE_DIR = Path(__file__).resolve().parent
-SETTINGS_PATH = BASE_DIR / "settings.json"
+DATA_DIR = Path(os.environ.get("CUMO_DATA_DIR", BASE_DIR))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+SETTINGS_PATH = DATA_DIR / "settings.json"
 
 
 def _load_settings() -> Dict[str, Any]:

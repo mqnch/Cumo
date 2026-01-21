@@ -9,10 +9,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = Path(os.environ.get("CUMO_DATA_DIR", BASE_DIR))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 DEFAULT_CREDENTIALS_PATH = BASE_DIR / "credentials.json"
-DEFAULT_TOKEN_PATH = BASE_DIR / "token.json"
+DEFAULT_TOKEN_PATH = DATA_DIR / "token.json"
 
 
 def _load_credentials(token_path: Path) -> Optional[Credentials]:
